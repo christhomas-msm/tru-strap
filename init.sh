@@ -3,6 +3,7 @@
 
 main() {
     parse_args "$@"
+    set_facter ipaddress_primary $(hostname -I | cut -d" " -f 1)
     setup_rhel7_repo
     install_yum_deps
     install_ruby
@@ -280,12 +281,7 @@ install_yum_deps() {
 # Install the gem dependencies
 install_gem_deps() {
   echo "Installing puppet and related gems"
-  gem_install puppet:3.8.7 hiera facter ruby-augeas hiera-eyaml ruby-shadow facter_ipaddress_primary
-
-  # Configure facter_ipaddress_primary so it works outside this script.
-  # i.e Users logging in interactively can run puppet apply successfully
-  echo 'export FACTERLIB="${FACTERLIB}:$(ipaddress_primary_path)"'>/etc/profile.d/ipaddress_primary.sh
-  chmod 0755 /etc/profile.d/ipaddress_primary.sh
+  gem_install puppet:3.8.7 hiera facter ruby-augeas hiera-eyaml ruby-shadow
 }
 
 # Inject the SSH key to allow git cloning
@@ -478,7 +474,6 @@ run_puppet() {
   export LC_ALL=en_GB.utf8
   echo ""
   echo "Running puppet apply"
-  export FACTERLIB="${FACTERLIB}:$(ipaddress_primary_path)"
   puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes
 
   PUPPET_EXIT=$?
